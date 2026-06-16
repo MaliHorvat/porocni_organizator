@@ -3,7 +3,10 @@ import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import type { Wedding, RSVP, Photo, CreateWeddingInput } from "@/types";
 
-const DATA_DIR = path.join(process.cwd(), "data");
+const DATA_DIR =
+  process.env.VERCEL === "1"
+    ? path.join("/tmp", "porocna-stran-data")
+    : path.join(process.cwd(), "data");
 const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
 
 const WEDDINGS_FILE = path.join(DATA_DIR, "weddings.json");
@@ -11,22 +14,36 @@ const RSVPS_FILE = path.join(DATA_DIR, "rsvps.json");
 const PHOTOS_FILE = path.join(DATA_DIR, "photos.json");
 
 function ensureDirs() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  try {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  } catch (error) {
+    console.error("Napaka pri ustvarjanju map:", error);
+  }
 }
 
 function readJson<T>(file: string, fallback: T): T {
   ensureDirs();
-  if (!fs.existsSync(file)) {
-    fs.writeFileSync(file, JSON.stringify(fallback, null, 2));
+  try {
+    if (!fs.existsSync(file)) {
+      fs.writeFileSync(file, JSON.stringify(fallback, null, 2));
+      return fallback;
+    }
+    return JSON.parse(fs.readFileSync(file, "utf-8")) as T;
+  } catch (error) {
+    console.error(`Napaka pri branju ${file}:`, error);
     return fallback;
   }
-  return JSON.parse(fs.readFileSync(file, "utf-8")) as T;
 }
 
 function writeJson<T>(file: string, data: T) {
   ensureDirs();
-  fs.writeFileSync(file, JSON.stringify(data, null, 2));
+  try {
+    fs.writeFileSync(file, JSON.stringify(data, null, 2));
+  } catch (error) {
+    console.error(`Napaka pri pisanju ${file}:`, error);
+    throw error;
+  }
 }
 
 function slugify(text: string): string {
