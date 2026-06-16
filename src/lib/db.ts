@@ -2,7 +2,6 @@ import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { getStore } from "@/lib/store";
-import { getStoreBackend } from "@/lib/store-types";
 import { linkWeddingToUser } from "@/lib/clerk-sync";
 import { DEFAULT_MENU_OPTIONS, MAX_GUESTS_PER_RSVP } from "@/lib/menus";
 import type { Wedding, RSVP, Photo, CreateWeddingInput, WeddingSettingsInput } from "@/types";
