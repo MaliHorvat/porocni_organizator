@@ -5,11 +5,22 @@ import type { Wedding, RSVP, Photo } from "@/types";
 
 let pool: mysql.Pool | null = null;
 
+export function toMysqlDatetime(value: Date | string): string {
+  const date = value instanceof Date ? value : new Date(value);
+  return date.toISOString().slice(0, 19).replace("T", " ");
+}
+
 function getPool() {
   if (!pool) {
     const url = getDatabaseUrl();
     if (!url) throw new Error("MySQL povezava ni konfigurirana");
-    pool = mysql.createPool(url);
+    pool = mysql.createPool({
+      uri: url,
+      waitForConnections: true,
+      connectionLimit: 5,
+      connectTimeout: 15_000,
+      enableKeepAlive: true,
+    });
   }
   return pool;
 }
@@ -155,7 +166,7 @@ export function createMysqlStore(): WeddingStore {
           wedding.clerkUserId || null,
           wedding.stripeSessionId || null,
           wedding.paymentStatus || null,
-          wedding.createdAt,
+          toMysqlDatetime(wedding.createdAt),
         ]
       );
       return wedding;
@@ -197,7 +208,7 @@ export function createMysqlStore(): WeddingStore {
           rsvp.menuChoice,
           rsvp.allergies,
           rsvp.message,
-          rsvp.createdAt,
+          toMysqlDatetime(rsvp.createdAt),
         ]
       );
       return rsvp;
@@ -236,7 +247,7 @@ export function createMysqlStore(): WeddingStore {
           photo.uploaderName,
           photo.caption,
           fileData || null,
-          photo.createdAt,
+          toMysqlDatetime(photo.createdAt),
         ]
       );
       return photo;

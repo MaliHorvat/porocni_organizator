@@ -24,7 +24,7 @@ function SuccessContent() {
     const verify = async () => {
       try {
         const res = await fetch(`/api/stripe/verify?session_id=${sessionId}`);
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
 
         if (res.ok && data.slug) {
           router.replace(`/${data.slug}/upravljanje?new=1`);
@@ -39,7 +39,7 @@ function SuccessContent() {
 
         setError(data.error || "Plačilo ni bilo potrjeno.");
       } catch {
-        setError("Napaka pri preverjanju plačila.");
+        setError("Napaka pri povezavi s strežnikom. Preveri internet in poskusi znova.");
       }
     };
 
