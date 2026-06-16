@@ -93,6 +93,14 @@ export async function updateWeddingSettings(
   return store.updateWedding(weddingId, settings);
 }
 
+export async function updateWeddingClerkId(
+  weddingId: string,
+  clerkUserId: string
+) {
+  const store = await getStore();
+  return store.updateWedding(weddingId, { clerkUserId });
+}
+
 export async function getRSVPs(weddingId?: string) {
   const store = await getStore();
   return store.getRSVPs(weddingId);

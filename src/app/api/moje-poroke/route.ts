@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
-import { getWeddingsByClerkUserId, getWeddingBySlug, seedDemoData } from "@/lib/db";
+import {
+  getWeddingsByClerkUserId,
+  getWeddingBySlug,
+  updateWeddingClerkId,
+  seedDemoData,
+} from "@/lib/db";
 import { getAuthUserId, isClerkEnabled } from "@/lib/auth";
 import { getWeddingRefsFromClerk } from "@/lib/clerk-sync";
+import type { Wedding } from "@/types";
 
 export async function GET() {
   await seedDemoData();
@@ -22,7 +28,13 @@ export async function GET() {
     const fromClerk = await Promise.all(
       refs.map((ref) => getWeddingBySlug(ref.slug))
     );
-    weddings = fromClerk.filter(Boolean) as typeof weddings;
+    weddings = fromClerk.filter(Boolean) as Wedding[];
+
+    for (const wedding of weddings) {
+      if (!wedding.clerkUserId) {
+        await updateWeddingClerkId(wedding.id, clerkUserId);
+      }
+    }
   }
 
   return NextResponse.json({

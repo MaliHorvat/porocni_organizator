@@ -256,6 +256,7 @@ export function createMysqlStore(): WeddingStore {
         dress_code: updates.dressCode,
         rsvp_deadline: updates.rsvpDeadline,
         gallery_enabled: updates.galleryEnabled,
+        clerk_user_id: updates.clerkUserId,
         expected_guests: updates.expectedGuests,
         max_guests_per_rsvp: updates.maxGuestsPerRsvp,
         menu_options: updates.menuOptions

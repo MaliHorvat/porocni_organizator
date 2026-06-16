@@ -1,5 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import type { Wedding } from "@/types";
+import { getWeddingRefsFromClerk } from "@/lib/clerk-sync";
+import { updateWeddingClerkId } from "@/lib/db";
 
 export function isClerkEnabled(): boolean {
   return Boolean(
@@ -28,8 +30,22 @@ export async function requireWeddingAccess(
   wedding: Wedding
 ): Promise<string | null> {
   const userId = await getAuthUserId();
-  if (!canAccessWedding(wedding, userId)) {
-    return null;
+  if (!isClerkEnabled()) return userId || "demo-user";
+  if (!userId) return null;
+
+  if (wedding.clerkUserId === userId) return userId;
+
+  const refs = await getWeddingRefsFromClerk(userId);
+  const ownsViaMetadata = refs.some(
+    (r) => r.slug === wedding.slug || r.id === wedding.id
+  );
+
+  if (ownsViaMetadata) {
+    if (!wedding.clerkUserId) {
+      await updateWeddingClerkId(wedding.id, userId);
+    }
+    return userId;
   }
-  return userId;
+
+  return null;
 }
