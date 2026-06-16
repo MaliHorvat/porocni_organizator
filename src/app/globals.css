@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "DM Sans", system-ui, sans-serif;
+
+  --color-cream: #faf8f5;
+  --color-cream-dark: #f0ebe3;
+  --color-sage: #8b9a7d;
+  --color-sage-dark: #6b7a5e;
+  --color-sage-light: #c5d4b8;
+  --color-rose: #c9a89a;
+  --color-rose-dark: #a67c6d;
+  --color-rose-light: #e8d5cc;
+  --color-charcoal: #2c2c2c;
+  --color-warm-gray: #6b6560;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-cream text-charcoal font-sans antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-serif;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .gradient-wedding {
+    background: linear-gradient(135deg, var(--color-cream) 0%, var(--color-rose-light) 50%, var(--color-sage-light) 100%);
+  }
+
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-md border border-white/50 shadow-lg;
+  }
+}
