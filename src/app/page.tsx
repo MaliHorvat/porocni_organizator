@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { getWeddingBySlug, seedDemoData } from "@/lib/db";
 import { PLANS, PROMO_DESCRIPTION } from "@/lib/stripe";
+import DemoShowcase from "@/components/DemoShowcase";
 
 const features = [
   {
@@ -99,15 +100,14 @@ export default async function HomePage() {
             </div>
 
             <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl font-light text-charcoal leading-tight text-balance">
-              Vaša poroka,
+              Vse za vaš najlepši dan
               <br />
-              <span className="italic text-rose-dark">ena stran</span>
+              <span className="italic text-rose-dark">na enem mestu</span>
             </h1>
 
             <p className="mt-6 text-lg sm:text-xl text-warm-gray max-w-2xl mx-auto text-balance">
-              Ustvarite moderno poročno spletno stran z RSVP obrazcem in galerijo
-              fotografij. Gostje potrdijo prihod, izberejo meni — vi pa imate vse
-              pod kontrolo.
+              Poročna stran, ki navduši goste. RSVP, meniji, QR koda in galerija —
+              vi imate pregled, gostje imajo vse na dlani.
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -129,6 +129,8 @@ export default async function HomePage() {
             </p>
           </div>
         </section>
+
+        <DemoShowcase />
 
         {/* How it works */}
         <section className="py-24 bg-white">
