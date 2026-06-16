@@ -7,6 +7,7 @@ export interface WeddingStore {
   getWeddingByStripeSession(sessionId: string): Promise<Wedding | undefined>;
   getWeddingsByClerkUserId(clerkUserId: string): Promise<Wedding[]>;
   createWedding(wedding: Wedding): Promise<Wedding>;
+  updateWedding(id: string, updates: Partial<Wedding>): Promise<Wedding | undefined>;
   saveWeddings(weddings: Wedding[]): Promise<void>;
 
   getRSVPs(weddingId?: string): Promise<RSVP[]>;

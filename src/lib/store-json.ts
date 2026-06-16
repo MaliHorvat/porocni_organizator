@@ -53,6 +53,14 @@ export function createJsonStore(): WeddingStore {
       writeJson(WEDDINGS_FILE, weddings);
       return wedding;
     },
+    async updateWedding(id, updates) {
+      const weddings = readJson<Wedding[]>(WEDDINGS_FILE, []);
+      const index = weddings.findIndex((w) => w.id === id);
+      if (index === -1) return undefined;
+      weddings[index] = { ...weddings[index], ...updates };
+      writeJson(WEDDINGS_FILE, weddings);
+      return weddings[index];
+    },
     async saveWeddings(weddings) {
       writeJson(WEDDINGS_FILE, weddings);
     },

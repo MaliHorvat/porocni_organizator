@@ -4,7 +4,8 @@ import { v4 as uuidv4 } from "uuid";
 import { getStore } from "@/lib/store";
 import { getStoreBackend } from "@/lib/store-types";
 import { linkWeddingToUser } from "@/lib/clerk-sync";
-import type { Wedding, RSVP, Photo, CreateWeddingInput } from "@/types";
+import { DEFAULT_MENU_OPTIONS, MAX_GUESTS_PER_RSVP } from "@/lib/menus";
+import type { Wedding, RSVP, Photo, CreateWeddingInput, WeddingSettingsInput } from "@/types";
 
 const LOCAL_UPLOADS = path.join(process.cwd(), "data", "uploads");
 
@@ -66,6 +67,8 @@ export async function createWedding(
     slug: await createSlug(input.partner1, input.partner2),
     ...input,
     galleryEnabled: input.plan === "premium",
+    maxGuestsPerRsvp: MAX_GUESTS_PER_RSVP,
+    menuOptions: DEFAULT_MENU_OPTIONS,
     createdAt: new Date().toISOString(),
     ...(options?.clerkUserId ? { clerkUserId: options.clerkUserId } : {}),
     ...(options?.stripeSessionId
@@ -80,6 +83,14 @@ export async function createWedding(
   }
 
   return wedding;
+}
+
+export async function updateWeddingSettings(
+  weddingId: string,
+  settings: WeddingSettingsInput
+) {
+  const store = await getStore();
+  return store.updateWedding(weddingId, settings);
 }
 
 export async function getRSVPs(weddingId?: string) {
@@ -161,6 +172,8 @@ export async function seedDemoData() {
     galleryEnabled: true,
     createdAt: new Date().toISOString(),
     plan: "premium",
+    maxGuestsPerRsvp: MAX_GUESTS_PER_RSVP,
+    menuOptions: DEFAULT_MENU_OPTIONS,
   };
 
   await store.createWedding(demo);

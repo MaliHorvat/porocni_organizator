@@ -1,7 +1,8 @@
 import mysql from "mysql2/promise";
 import { getDatabaseUrl } from "./store-types";
 import type { WeddingStore } from "./store-types";
-import type { Wedding, RSVP, Photo } from "@/types";
+import type { Wedding, RSVP, Photo, MenuOption, GuestMenuChoice } from "@/types";
+import { DEFAULT_MENU_OPTIONS, MAX_GUESTS_PER_RSVP, normalizeGuestMenus } from "./menus";
 
 let pool: mysql.Pool | null = null;
 
@@ -30,7 +31,22 @@ function formatDate(val: unknown): string {
   return String(val).split("T")[0];
 }
 
+function parseJsonColumn<T>(val: unknown, fallback: T): T {
+  if (!val) return fallback;
+  if (typeof val === "object") return val as T;
+  try {
+    return JSON.parse(String(val)) as T;
+  } catch {
+    return fallback;
+  }
+}
+
 function rowToWedding(row: Record<string, unknown>): Wedding {
+  const menuOptions = parseJsonColumn<MenuOption[] | undefined>(
+    row.menu_options,
+    undefined
+  );
+
   return {
     id: row.id as string,
     slug: row.slug as string,
@@ -51,7 +67,46 @@ function rowToWedding(row: Record<string, unknown>): Wedding {
     clerkUserId: (row.clerk_user_id as string) || undefined,
     stripeSessionId: (row.stripe_session_id as string) || undefined,
     paymentStatus: row.payment_status as "paid" | undefined,
+    expectedGuests: row.expected_guests != null ? Number(row.expected_guests) : undefined,
+    maxGuestsPerRsvp: row.max_guests_per_rsvp != null
+      ? Number(row.max_guests_per_rsvp)
+      : MAX_GUESTS_PER_RSVP,
+    menuOptions: menuOptions?.length ? menuOptions : DEFAULT_MENU_OPTIONS,
   };
+}
+
+function rowToRsvp(row: Record<string, unknown>): RSVP {
+  const guestMenus = parseJsonColumn<GuestMenuChoice[]>(
+    row.guest_menus,
+    []
+  );
+
+  const rsvp: RSVP = {
+    id: row.id as string,
+    weddingId: row.wedding_id as string,
+    name: row.name as string,
+    email: (row.email as string) || "",
+    attending: Boolean(row.attending),
+    guestCount: row.guest_count as number,
+    menuChoice: (row.menu_choice as string) || undefined,
+    guestMenus,
+    allergies: (row.allergies as string) || "",
+    message: (row.message as string) || "",
+    createdAt: row.created_at instanceof Date
+      ? row.created_at.toISOString()
+      : String(row.created_at),
+  };
+
+  rsvp.guestMenus = normalizeGuestMenus(rsvp);
+  return rsvp;
+}
+
+async function safeAlter(sql: string) {
+  try {
+    await getPool().execute(sql);
+  } catch {
+    // Stolpec že obstaja
+  }
 }
 
 export async function initMysqlSchema() {
@@ -74,6 +129,9 @@ export async function initMysqlSchema() {
       clerk_user_id VARCHAR(255),
       stripe_session_id VARCHAR(255) UNIQUE,
       payment_status VARCHAR(20),
+      expected_guests INT NULL,
+      max_guests_per_rsvp INT DEFAULT 8,
+      menu_options JSON NULL,
       created_at DATETIME NOT NULL
     )
   `);
@@ -82,10 +140,11 @@ export async function initMysqlSchema() {
       id VARCHAR(36) PRIMARY KEY,
       wedding_id VARCHAR(36) NOT NULL,
       name VARCHAR(255) NOT NULL,
-      email VARCHAR(255) NOT NULL,
+      email VARCHAR(255) NULL,
       attending BOOLEAN NOT NULL,
       guest_count INT NOT NULL,
-      menu_choice VARCHAR(20) NOT NULL,
+      menu_choice VARCHAR(50) NULL,
+      guest_menus JSON NULL,
       allergies TEXT,
       message TEXT,
       created_at DATETIME NOT NULL,
@@ -104,6 +163,13 @@ export async function initMysqlSchema() {
       INDEX idx_photos_wedding (wedding_id)
     )
   `);
+
+  await safeAlter("ALTER TABLE weddings ADD COLUMN expected_guests INT NULL");
+  await safeAlter("ALTER TABLE weddings ADD COLUMN max_guests_per_rsvp INT DEFAULT 8");
+  await safeAlter("ALTER TABLE weddings ADD COLUMN menu_options JSON NULL");
+  await safeAlter("ALTER TABLE rsvps ADD COLUMN guest_menus JSON NULL");
+  await safeAlter("ALTER TABLE rsvps MODIFY COLUMN email VARCHAR(255) NULL");
+  await safeAlter("ALTER TABLE rsvps MODIFY COLUMN menu_choice VARCHAR(50) NULL");
 }
 
 export function createMysqlStore(): WeddingStore {
@@ -147,8 +213,9 @@ export function createMysqlStore(): WeddingStore {
       await getPool().execute(
         `INSERT INTO weddings (id, slug, partner1, partner2, wedding_date, wedding_time,
           venue, venue_address, description, dress_code, rsvp_deadline, gallery_enabled,
-          plan, clerk_user_id, stripe_session_id, payment_status, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          plan, clerk_user_id, stripe_session_id, payment_status,
+          expected_guests, max_guests_per_rsvp, menu_options, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           wedding.id,
           wedding.slug,
@@ -166,10 +233,53 @@ export function createMysqlStore(): WeddingStore {
           wedding.clerkUserId || null,
           wedding.stripeSessionId || null,
           wedding.paymentStatus || null,
+          wedding.expectedGuests ?? null,
+          wedding.maxGuestsPerRsvp ?? MAX_GUESTS_PER_RSVP,
+          JSON.stringify(wedding.menuOptions ?? DEFAULT_MENU_OPTIONS),
           toMysqlDatetime(wedding.createdAt),
         ]
       );
       return wedding;
+    },
+    async updateWedding(id, updates) {
+      const fields: string[] = [];
+      const values: unknown[] = [];
+
+      const map: Record<string, unknown> = {
+        partner1: updates.partner1,
+        partner2: updates.partner2,
+        wedding_date: updates.weddingDate,
+        wedding_time: updates.weddingTime,
+        venue: updates.venue,
+        venue_address: updates.venueAddress,
+        description: updates.description,
+        dress_code: updates.dressCode,
+        rsvp_deadline: updates.rsvpDeadline,
+        gallery_enabled: updates.galleryEnabled,
+        expected_guests: updates.expectedGuests,
+        max_guests_per_rsvp: updates.maxGuestsPerRsvp,
+        menu_options: updates.menuOptions
+          ? JSON.stringify(updates.menuOptions)
+          : undefined,
+      };
+
+      for (const [col, val] of Object.entries(map)) {
+        if (val !== undefined) {
+          fields.push(`${col} = ?`);
+          values.push(val);
+        }
+      }
+
+      if (fields.length === 0) {
+        return this.getWeddingById(id);
+      }
+
+      values.push(id);
+      await getPool().execute(
+        `UPDATE weddings SET ${fields.join(", ")} WHERE id = ?`,
+        values as (string | number | boolean | null)[]
+      );
+      return this.getWeddingById(id);
     },
     async saveWeddings() {
       throw new Error("saveWeddings not supported for MySQL");
@@ -178,34 +288,23 @@ export function createMysqlStore(): WeddingStore {
       const [rows] = weddingId
         ? await getPool().execute("SELECT * FROM rsvps WHERE wedding_id = ?", [weddingId])
         : await getPool().execute("SELECT * FROM rsvps");
-      return (rows as Record<string, unknown>[]).map((row) => ({
-        id: row.id as string,
-        weddingId: row.wedding_id as string,
-        name: row.name as string,
-        email: row.email as string,
-        attending: Boolean(row.attending),
-        guestCount: row.guest_count as number,
-        menuChoice: row.menu_choice as RSVP["menuChoice"],
-        allergies: (row.allergies as string) || "",
-        message: (row.message as string) || "",
-        createdAt: row.created_at instanceof Date
-          ? row.created_at.toISOString()
-          : String(row.created_at),
-      }));
+      return (rows as Record<string, unknown>[]).map(rowToRsvp);
     },
     async createRSVP(rsvp) {
+      const primaryMenu = rsvp.guestMenus[0]?.menuId || rsvp.menuChoice || "mesni";
       await getPool().execute(
         `INSERT INTO rsvps (id, wedding_id, name, email, attending, guest_count,
-          menu_choice, allergies, message, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          menu_choice, guest_menus, allergies, message, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           rsvp.id,
           rsvp.weddingId,
           rsvp.name,
-          rsvp.email,
+          rsvp.email || null,
           rsvp.attending,
           rsvp.guestCount,
-          rsvp.menuChoice,
+          primaryMenu,
+          JSON.stringify(rsvp.guestMenus),
           rsvp.allergies,
           rsvp.message,
           toMysqlDatetime(rsvp.createdAt),

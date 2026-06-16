@@ -1,3 +1,14 @@
+export interface MenuOption {
+  id: string;
+  label: string;
+}
+
+export interface GuestMenuChoice {
+  name: string;
+  menuId: string;
+  allergies?: string;
+}
+
 export interface Wedding {
   id: string;
   slug: string;
@@ -16,6 +27,9 @@ export interface Wedding {
   clerkUserId?: string;
   stripeSessionId?: string;
   paymentStatus?: "paid";
+  expectedGuests?: number;
+  maxGuestsPerRsvp?: number;
+  menuOptions?: MenuOption[];
 }
 
 export interface RSVP {
@@ -25,7 +39,9 @@ export interface RSVP {
   email: string;
   attending: boolean;
   guestCount: number;
-  menuChoice: "mesni" | "vegi" | "veganski" | "otroski";
+  /** @deprecated Uporabi guestMenus */
+  menuChoice?: string;
+  guestMenus: GuestMenuChoice[];
   allergies: string;
   message: string;
   createdAt: string;
@@ -53,12 +69,24 @@ export interface CreateWeddingInput {
   plan: "basic" | "premium";
 }
 
+export interface WeddingSettingsInput {
+  expectedGuests?: number;
+  maxGuestsPerRsvp?: number;
+  menuOptions?: MenuOption[];
+  description?: string;
+  dressCode?: string;
+  rsvpDeadline?: string;
+  venue?: string;
+  venueAddress?: string;
+  weddingTime?: string;
+}
+
 export interface RSVPInput {
   name: string;
-  email: string;
+  email?: string;
   attending: boolean;
   guestCount: number;
-  menuChoice: "mesni" | "vegi" | "veganski" | "otroski";
-  allergies: string;
-  message: string;
+  guestMenus: GuestMenuChoice[];
+  allergies?: string;
+  message?: string;
 }

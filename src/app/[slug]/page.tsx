@@ -4,6 +4,7 @@ import { formatDate, daysUntil } from "@/lib/utils";
 import RSVPForm from "@/components/RSVPForm";
 import GalleryUpload from "@/components/GalleryUpload";
 import { MapPin, Clock, Calendar, Shirt } from "lucide-react";
+import { getMenuOptions } from "@/lib/menus";
 import type { Metadata } from "next";
 
 interface Props {
@@ -103,10 +104,12 @@ export default async function WeddingPage({ params }: Props) {
 
       {/* RSVP */}
       <section className="py-20 bg-cream" id="rsvp">
-        <div className="max-w-lg mx-auto px-6">
+        <div className="max-w-2xl mx-auto px-6">
           <div className="text-center mb-10">
             <h2 className="font-serif text-4xl text-charcoal mb-3">Potrditev udeležbe</h2>
-            <p className="text-warm-gray">Prosimo, sporočite nam, ali boste z nami.</p>
+            <p className="text-warm-gray">
+              Prosimo, sporočite nam, ali boste z nami. Družine lahko potrdijo več oseb naenkrat.
+            </p>
           </div>
           <div className="glass-card rounded-2xl p-8">
             <RSVPForm
@@ -114,6 +117,8 @@ export default async function WeddingPage({ params }: Props) {
               partner1={wedding.partner1}
               partner2={wedding.partner2}
               rsvpDeadline={wedding.rsvpDeadline}
+              menuOptions={getMenuOptions(wedding)}
+              maxGuests={wedding.maxGuestsPerRsvp ?? 8}
             />
           </div>
         </div>
