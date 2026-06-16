@@ -5,18 +5,22 @@ export const PLANS = {
   basic: {
     name: "Osnovni paket",
     description: "Poročna stran z RSVP obrazcem in QR kodo",
-    amount: 3900, // 39 € (prej 49 €)
-    priceLabel: "39",
-    compareAtLabel: "49",
+    amount: 4900,
+    priceLabel: "49",
+    compareAtLabel: "59",
   },
   premium: {
     name: "Premium paket",
     description: "Vse iz osnovnega + galerija fotografij",
-    amount: 6900, // 69 € (prej 79 €)
-    priceLabel: "69",
-    compareAtLabel: "79",
+    amount: 7900,
+    priceLabel: "79",
+    compareAtLabel: "99",
   },
 } as const;
+
+export const PROMO_LABEL = "Akcijska cena";
+export const PROMO_DESCRIPTION =
+  "Omejena ponudba — znižane cene veljajo za omejen čas. Enkratno plačilo, brez naročnine.";
 
 export type PlanId = keyof typeof PLANS;
 

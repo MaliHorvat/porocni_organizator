@@ -9,11 +9,23 @@ import Input from "@/components/Input";
 import Textarea from "@/components/Textarea";
 import { ArrowLeft, ArrowRight, Check, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { PLANS } from "@/lib/stripe";
+import { PLANS, PROMO_DESCRIPTION, PROMO_LABEL } from "@/lib/stripe";
 
 const menuOptions = [
-  { value: "basic" as const, label: "Osnovni", price: `${PLANS.basic.priceLabel} €`, desc: "RSVP + QR koda" },
-  { value: "premium" as const, label: "Premium", price: `${PLANS.premium.priceLabel} €`, desc: "Vse + galerija fotografij" },
+  {
+    value: "basic" as const,
+    label: "Osnovni",
+    price: PLANS.basic.priceLabel,
+    compareAt: PLANS.basic.compareAtLabel,
+    desc: "RSVP + QR koda",
+  },
+  {
+    value: "premium" as const,
+    label: "Premium",
+    price: PLANS.premium.priceLabel,
+    compareAt: PLANS.premium.compareAtLabel,
+    desc: "Vse + galerija fotografij",
+  },
 ];
 
 export default function CreateWeddingForm() {
@@ -223,8 +235,11 @@ export default function CreateWeddingForm() {
             {step === 3 && (
               <div className="space-y-5">
                 <h2 className="font-serif text-2xl text-charcoal mb-2">Izberi paket</h2>
-                <p className="text-warm-gray text-sm mb-6">
-                  Enkratno plačilo — brez skritih stroškov.
+                <p className="text-warm-gray text-sm mb-2">
+                  {PROMO_DESCRIPTION}
+                </p>
+                <p className="text-xs text-sage-dark font-medium mb-6">
+                  {PROMO_LABEL} — prihranite pri obeh paketih.
                 </p>
 
                 <div className="grid sm:grid-cols-2 gap-4">
@@ -239,11 +254,20 @@ export default function CreateWeddingForm() {
                           : "border-cream-dark hover:border-sage-light"
                       }`}
                     >
+                      <span className="absolute top-4 left-4 text-[10px] font-semibold uppercase tracking-wide bg-rose-light text-rose-dark px-2 py-0.5 rounded-full">
+                        Akcija
+                      </span>
                       {form.plan === opt.value && (
                         <Check className="absolute top-4 right-4 w-5 h-5 text-sage" />
                       )}
-                      <p className="font-serif text-xl text-charcoal">{opt.label}</p>
-                      <p className="text-2xl font-serif text-sage-dark mt-1">{opt.price}</p>
+                      <p className="font-serif text-xl text-charcoal mt-6">{opt.label}</p>
+                      <p className="text-2xl font-serif text-sage-dark mt-1">
+                        {opt.price} €
+                        <span className="text-sm text-warm-gray line-through ml-2 font-sans">
+                          {opt.compareAt} €
+                        </span>
+                      </p>
+                      <p className="text-xs text-sage-dark mt-1">{PROMO_LABEL}</p>
                       <p className="text-sm text-warm-gray mt-2">{opt.desc}</p>
                     </button>
                   ))}
@@ -263,7 +287,7 @@ export default function CreateWeddingForm() {
                   <Button onClick={handleSubmit} disabled={loading}>
                     {loading
                       ? "Preusmerjam..."
-                      : `Plačaj ${PLANS[form.plan].priceLabel} € in ustvari`}
+                      : `Plačaj ${PLANS[form.plan].priceLabel} € (akcija) in ustvari`}
                     <Sparkles className="w-4 h-4" />
                   </Button>
                 </div>

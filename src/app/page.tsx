@@ -14,7 +14,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { getWeddingBySlug, seedDemoData } from "@/lib/db";
-import { PLANS } from "@/lib/stripe";
+import { PLANS, PROMO_DESCRIPTION } from "@/lib/stripe";
 
 const features = [
   {
@@ -125,7 +125,7 @@ export default async function HomePage() {
             </div>
 
             <p className="mt-6 text-sm text-warm-gray">
-              Pripravljeno v 15 minutah · od {PLANS.basic.priceLabel} € enkratno
+              Pripravljeno v 15 minutah · akcija od {PLANS.basic.priceLabel} € enkratno
             </p>
           </div>
         </section>
@@ -187,8 +187,11 @@ export default async function HomePage() {
             <h2 className="font-serif text-4xl text-center text-charcoal mb-4">
               Preprosta cena
             </h2>
-            <p className="text-center text-warm-gray mb-16 max-w-xl mx-auto">
+            <p className="text-center text-warm-gray mb-4 max-w-xl mx-auto">
               Enkratno plačilo brez naročnine. V poročnem proračunu zanemarljiv znesek.
+            </p>
+            <p className="text-center text-sm text-sage-dark font-medium mb-16 max-w-lg mx-auto bg-sage-light/30 rounded-full px-5 py-2">
+              {PROMO_DESCRIPTION}
             </p>
 
             <div className="grid md:grid-cols-2 gap-8">
@@ -206,9 +209,21 @@ export default async function HomePage() {
                       Najbolj priljubljen
                     </span>
                   )}
+                  <span
+                    className={`inline-block text-xs font-medium px-3 py-1 rounded-full mb-4 ${
+                      plan.highlighted
+                        ? "bg-rose/80 text-white"
+                        : "bg-rose-light text-rose-dark"
+                    } ${plan.highlighted ? "ml-2" : ""}`}
+                  >
+                    Akcija
+                  </span>
                   <h3 className={`font-serif text-2xl mb-2 ${plan.highlighted ? "text-cream" : "text-charcoal"}`}>
                     {plan.name}
                   </h3>
+                  <p className={`text-xs mb-3 ${plan.highlighted ? "text-cream/70" : "text-sage-dark"}`}>
+                    Akcijska cena
+                  </p>
                   <div className="mb-6">
                     <span className={`font-serif text-5xl ${plan.highlighted ? "text-cream" : "text-charcoal"}`}>
                       {plan.price} €
