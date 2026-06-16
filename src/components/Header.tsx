@@ -1,5 +1,19 @@
 import Link from "next/link";
 import { Heart } from "lucide-react";
+import AuthNav from "@/components/AuthNav";
+
+const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+
+function PublicNav() {
+  return (
+    <Link
+      href="/ustvari"
+      className="text-sm bg-sage text-white px-5 py-2 rounded-full hover:bg-sage-dark transition-colors"
+    >
+      Ustvari stran
+    </Link>
+  );
+}
 
 export default function Header() {
   return (
@@ -11,7 +25,7 @@ export default function Header() {
             Naša Poroka
           </span>
         </Link>
-        <nav className="flex items-center gap-6">
+        <nav className="flex items-center gap-4 sm:gap-6">
           <Link
             href="/#funkcije"
             className="text-sm text-warm-gray hover:text-charcoal transition-colors hidden sm:block"
@@ -24,12 +38,7 @@ export default function Header() {
           >
             Cenik
           </Link>
-          <Link
-            href="/ustvari"
-            className="text-sm bg-sage text-white px-5 py-2 rounded-full hover:bg-sage-dark transition-colors"
-          >
-            Ustvari stran
-          </Link>
+          {clerkEnabled ? <AuthNav /> : <PublicNav />}
         </nav>
       </div>
     </header>

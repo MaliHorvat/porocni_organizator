@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
-import { getWeddingBySlug, getPhotos, seedDemoData } from "@/lib/db";
+import { getWeddingBySlug, seedDemoData } from "@/lib/db";
 import { formatDate, daysUntil } from "@/lib/utils";
 import RSVPForm from "@/components/RSVPForm";
-import Gallery from "@/components/Gallery";
+import GalleryUpload from "@/components/GalleryUpload";
 import { MapPin, Clock, Calendar, Shirt } from "lucide-react";
 import type { Metadata } from "next";
 
@@ -28,7 +28,6 @@ export default async function WeddingPage({ params }: Props) {
 
   if (!wedding) notFound();
 
-  const photos = getPhotos(wedding.id);
   const days = daysUntil(wedding.weddingDate);
 
   return (
@@ -122,12 +121,7 @@ export default async function WeddingPage({ params }: Props) {
 
       {/* Gallery */}
       {wedding.galleryEnabled && (
-        <Gallery
-          weddingSlug={wedding.slug}
-          weddingId={wedding.id}
-          initialPhotos={photos}
-          enabled={wedding.galleryEnabled}
-        />
+        <GalleryUpload weddingSlug={wedding.slug} enabled={wedding.galleryEnabled} />
       )}
 
       {/* Footer */}

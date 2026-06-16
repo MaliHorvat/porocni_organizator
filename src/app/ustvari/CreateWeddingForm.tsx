@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -22,6 +22,7 @@ export default function CreateWeddingForm() {
 
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [cancelled, setCancelled] = useState(false);
   const [form, setForm] = useState({
     partner1: "",
     partner2: "",
@@ -42,18 +43,34 @@ export default function CreateWeddingForm() {
   const canProceedStep1 = form.partner1 && form.partner2 && form.weddingDate;
   const canProceedStep2 = form.venue && form.venueAddress && form.rsvpDeadline;
 
+  useEffect(() => {
+    if (searchParams.get("cancelled") === "1") {
+      setCancelled(true);
+      setStep(3);
+    }
+  }, [searchParams]);
+
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/weddings", {
+      const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
       const data = await res.json();
+
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+        return;
+      }
+
       if (data.slug) {
         router.push(`/${data.slug}/upravljanje`);
+        return;
       }
+
+      alert(data.error || "Napaka pri ustvarjanju strani. Poskusite znova.");
     } catch {
       alert("Napaka pri ustvarjanju strani. Poskusite znova.");
     } finally {
@@ -216,10 +233,11 @@ export default function CreateWeddingForm() {
                   ))}
                 </div>
 
-                <div className="bg-cream-dark/50 rounded-xl p-4 text-sm text-warm-gray">
-                  <strong className="text-charcoal">Opomba:</strong> Za lokalni demo plačilo ni potrebno.
-                  Stran bo takoj ustvarjena.
-                </div>
+                {cancelled && (
+                  <div className="bg-rose-light/30 border border-rose-light rounded-xl p-4 text-sm text-rose-dark">
+                    Plačilo je bilo preklicano. Lahko poskusite znova.
+                  </div>
+                )}
 
                 <div className="flex justify-between pt-4">
                   <Button variant="ghost" onClick={() => setStep(2)}>
@@ -227,7 +245,9 @@ export default function CreateWeddingForm() {
                     Nazaj
                   </Button>
                   <Button onClick={handleSubmit} disabled={loading}>
-                    {loading ? "Ustvarjam..." : "Ustvari stran"}
+                    {loading
+                      ? "Preusmerjam..."
+                      : `Plačaj ${form.plan === "premium" ? "79 €" : "49 €"} in ustvari`}
                     <Sparkles className="w-4 h-4" />
                   </Button>
                 </div>

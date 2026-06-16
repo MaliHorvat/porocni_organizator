@@ -13,6 +13,9 @@ export interface Wedding {
   galleryEnabled: boolean;
   createdAt: string;
   plan: "basic" | "premium";
+  clerkUserId?: string;
+  stripeSessionId?: string;
+  paymentStatus?: "paid";
 }
 
 export interface RSVP {

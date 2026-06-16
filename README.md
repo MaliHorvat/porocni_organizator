@@ -58,6 +58,60 @@ Za lokalni razvoj se podatki shranjujejo v:
 
 Za produkcijo bo potrebna zamenjava `src/lib/db.ts` s povezavo na Neoserv bazo.
 
+## Stripe plačila
+
+Plačilo poteka prek **Stripe Checkout** ob izbiri paketa (49 € / 79 €).
+
+### 1. Stripe račun
+1. Ustvari račun na [stripe.com](https://stripe.com)
+2. V **Developers → API keys** kopiraj **Secret key** (`sk_test_...` ali `sk_live_...`)
+
+### 2. Okoljske spremenljivke (Vercel)
+V **Vercel → Project → Settings → Environment Variables** dodaj:
+
+| Spremenljivka | Vrednost |
+|---------------|----------|
+| `STRIPE_SECRET_KEY` | `sk_live_...` |
+| `STRIPE_WEBHOOK_SECRET` | `whsec_...` (korak 3) |
+| `NEXT_PUBLIC_BASE_URL` | `https://porocni-organizator.visionone.si` |
+
+Lokalno kopiraj `.env.example` v `.env.local` in vpiši test ključe.
+
+### 3. Webhook
+1. Stripe Dashboard → **Developers → Webhooks → Add endpoint**
+2. URL: `https://porocni-organizator.visionone.si/api/stripe/webhook`
+3. Dogodek: `checkout.session.completed`
+4. Kopiraj **Signing secret** v `STRIPE_WEBHOOK_SECRET`
+
+### 4. Testiranje
+- Uporabi test kartico: `4242 4242 4242 4242`, poljuben datum/CVC
+- Brez Stripe ključev (lokalno) se stran ustvari brez plačila (demo način)
+
+## Clerk prijava (poročenca)
+
+Poročenca se morajo prijaviti, da ustvarijo stran in vidijo zasebne podatke (RSVP, fotografije).
+
+### Zakaj?
+- **Fotografije** gostov niso javno dostopne — vidite jih samo vi
+- **RSVP odzivi** (imena, e-pošte, alergije) so zaščiteni
+- **Nadzorna plošča** je dostopna samo lastniku poroke
+
+### Nastavitev
+1. Ustvari aplikacijo na [clerk.com](https://clerk.com)
+2. V **Vercel → Environment Variables** dodaj:
+   - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+   - `CLERK_SECRET_KEY`
+   - `NEXT_PUBLIC_CLERK_SIGN_IN_URL` = `/prijava`
+   - `NEXT_PUBLIC_CLERK_SIGN_UP_URL` = `/registracija`
+3. V Clerk Dashboard → **Domains** dodaj `porocni-organizator.visionone.si`
+4. Redeploy
+
+### Kako deluje
+| Kdo | Kaj vidi |
+|-----|----------|
+| Gost (brez prijave) | Poročno stran, RSVP obrazec, nalaganje fotografij |
+| Poročenec (prijavljen) | Nadzorna plošča, RSVP seznam, galerija fotografij |
+
 ## Tehnologije
 
 - Next.js 15 (App Router)
@@ -65,3 +119,5 @@ Za produkcijo bo potrebna zamenjava `src/lib/db.ts` s povezavo na Neoserv bazo.
 - Tailwind CSS 4
 - Lucide ikone
 - qrcode.react
+- Stripe Checkout
+- Clerk (prijava poročencev)

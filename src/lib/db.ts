@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from "uuid";
 import type { Wedding, RSVP, Photo, CreateWeddingInput } from "@/types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
-const UPLOADS_DIR = path.join(process.cwd(), "public", "uploads");
+const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
 
 const WEDDINGS_FILE = path.join(DATA_DIR, "weddings.json");
 const RSVPS_FILE = path.join(DATA_DIR, "rsvps.json");
@@ -64,7 +64,24 @@ export function getWeddingById(id: string): Wedding | undefined {
   return getWeddings().find((w) => w.id === id);
 }
 
-export function createWedding(input: CreateWeddingInput): Wedding {
+export function getWeddingByStripeSession(
+  sessionId: string
+): Wedding | undefined {
+  return getWeddings().find((w) => w.stripeSessionId === sessionId);
+}
+
+export function createWedding(
+  input: CreateWeddingInput,
+  options?: { stripeSessionId?: string; clerkUserId?: string }
+): Wedding {
+  const stripeSessionId = options?.stripeSessionId;
+  const clerkUserId = options?.clerkUserId;
+
+  if (stripeSessionId) {
+    const existing = getWeddingByStripeSession(stripeSessionId);
+    if (existing) return existing;
+  }
+
   const weddings = getWeddings();
   const wedding: Wedding = {
     id: uuidv4(),
@@ -72,6 +89,10 @@ export function createWedding(input: CreateWeddingInput): Wedding {
     ...input,
     galleryEnabled: input.plan === "premium",
     createdAt: new Date().toISOString(),
+    ...(clerkUserId ? { clerkUserId } : {}),
+    ...(stripeSessionId
+      ? { stripeSessionId, paymentStatus: "paid" as const }
+      : {}),
   };
   weddings.push(wedding);
   writeJson(WEDDINGS_FILE, weddings);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getWeddingBySlug, getRSVPs, getPhotos, seedDemoData } from "@/lib/db";
+import { getWeddingBySlug, seedDemoData } from "@/lib/db";
 
 export async function GET(
   _request: NextRequest,
@@ -13,8 +13,8 @@ export async function GET(
     return NextResponse.json({ error: "Poroka ni najdena" }, { status: 404 });
   }
 
-  const rsvps = getRSVPs(wedding.id);
-  const photos = getPhotos(wedding.id);
+  const { clerkUserId: _owner, stripeSessionId: _session, ...publicWedding } =
+    wedding;
 
-  return NextResponse.json({ wedding, rsvps, photos });
+  return NextResponse.json({ wedding: publicWedding });
 }

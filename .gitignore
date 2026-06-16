@@ -41,4 +41,5 @@ next-env.d.ts
 
 # local data
 /data/*.json
+/data/uploads/*
 /public/uploads/*

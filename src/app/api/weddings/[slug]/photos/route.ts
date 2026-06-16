@@ -2,20 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile } from "fs/promises";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
-import { getWeddingBySlug, createPhoto, getPhotos, getUploadsDir, seedDemoData } from "@/lib/db";
-
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
-) {
-  seedDemoData();
-  const { slug } = await params;
-  const wedding = getWeddingBySlug(slug);
-  if (!wedding) {
-    return NextResponse.json({ error: "Poroka ni najdena" }, { status: 404 });
-  }
-  return NextResponse.json({ photos: getPhotos(wedding.id) });
-}
+import {
+  getWeddingBySlug,
+  createPhoto,
+  getUploadsDir,
+  seedDemoData,
+} from "@/lib/db";
 
 export async function POST(
   request: NextRequest,
@@ -53,7 +45,7 @@ export async function POST(
     await writeFile(path.join(uploadDir, filename), buffer);
 
     const photo = createPhoto(wedding.id, filename, uploaderName, caption);
-    return NextResponse.json({ photo });
+    return NextResponse.json({ photo: { id: photo.id, uploaderName: photo.uploaderName } });
   } catch {
     return NextResponse.json(
       { error: "Napaka pri nalaganju fotografije" },

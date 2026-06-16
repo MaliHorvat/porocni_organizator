@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -27,9 +28,17 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+
   return (
     <html lang="sl" className={`${cormorant.variable} ${dmSans.variable}`}>
-      <body>{children}</body>
+      <body>
+        {clerkEnabled ? (
+          <ClerkProvider>{children}</ClerkProvider>
+        ) : (
+          children
+        )}
+      </body>
     </html>
   );
 }

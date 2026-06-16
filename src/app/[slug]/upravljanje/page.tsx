@@ -14,26 +14,47 @@ import {
   Check,
   X,
 } from "lucide-react";
-import type { Wedding, RSVP } from "@/types";
+import type { Wedding, RSVP, Photo } from "@/types";
 import { formatShortDate } from "@/lib/utils";
+import PrivateGallery from "@/components/PrivateGallery";
 
 export default function ManagementPage() {
   const params = useParams();
   const slug = params.slug as string;
   const [wedding, setWedding] = useState<Wedding | null>(null);
   const [rsvps, setRsvps] = useState<RSVP[]>([]);
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [pageUrl, setPageUrl] = useState("");
+  const [accessError, setAccessError] = useState("");
 
   useEffect(() => {
     setPageUrl(`${window.location.origin}/${slug}`);
 
-    fetch(`/api/weddings/${slug}`)
+    fetch(`/api/weddings/${slug}/manage`)
       .then((r) => r.json())
       .then((data) => {
-        if (data.wedding) setWedding(data.wedding);
-        if (data.rsvps) setRsvps(data.rsvps);
+        if (data.wedding) {
+          setWedding(data.wedding);
+          setRsvps(data.rsvps || []);
+          setPhotos(data.photos || []);
+        } else {
+          setAccessError(data.error || "Nimate dostopa do te strani.");
+        }
       });
   }, [slug]);
+
+  if (accessError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-cream px-6">
+        <div className="text-center max-w-md">
+          <p className="text-rose-dark mb-4">{accessError}</p>
+          <Link href="/prijava">
+            <Button>Prijava</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (!wedding) {
     return (
@@ -237,6 +258,10 @@ export default function ManagementPage() {
             </div>
           </div>
         </div>
+
+        {wedding.galleryEnabled && (
+          <PrivateGallery weddingSlug={slug} photos={photos} />
+        )}
       </div>
     </div>
   );

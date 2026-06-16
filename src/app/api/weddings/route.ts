@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createWedding, seedDemoData } from "@/lib/db";
+import { getAuthUserId, isClerkEnabled } from "@/lib/auth";
 import type { CreateWeddingInput } from "@/types";
 
 export async function POST(request: NextRequest) {
@@ -14,7 +15,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const wedding = createWedding(body);
+    const clerkUserId = await getAuthUserId();
+    if (isClerkEnabled() && !clerkUserId) {
+      return NextResponse.json({ error: "Potrebna je prijava" }, { status: 401 });
+    }
+
+    const wedding = createWedding(body, { clerkUserId: clerkUserId || undefined });
     return NextResponse.json({ slug: wedding.slug, id: wedding.id });
   } catch {
     return NextResponse.json(
