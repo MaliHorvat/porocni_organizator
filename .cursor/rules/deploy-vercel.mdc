@@ -1,0 +1,19 @@
+---
+description: Po vsaki spremembi kode avtomatsko deployaj na Vercel
+alwaysApply: true
+---
+
+# Deploy na Vercel
+
+Po končanih spremembah v projektu vedno samodejno deployaj:
+
+1. Preveri `git status` in `git diff`
+2. Commitaj relevantne spremembe z jasnim sporočilom
+3. Pushaj na `origin main` (`git push origin main`)
+4. GitHub integracija sproži Vercel deploy — po pushu počakaj ~1–2 min in preveri `https://porocni-organizator.vercel.app`
+5. Če je Vercel CLI prijavljen, lahko dodatno zaženeš `npx vercel --prod --yes`
+
+Repozitorij: `https://github.com/MaliHorvat/porocni_organizator`
+Produkcija: `https://porocni-organizator.visionone.si` (custom domena)
+
+Ne pozabi: okoljske spremenljivke (Stripe, Clerk) se nastavljajo v Vercel Dashboard, ne v git.
