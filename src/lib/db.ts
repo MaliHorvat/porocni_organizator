@@ -157,16 +157,16 @@ export function getUploadsDir(weddingId: string): string {
   return dir;
 }
 
-export async function seedDemoData() {
-  if (getStoreBackend() === "mysql") return;
+const DEMO_SLUG = "maja-in-luka";
 
+export async function seedDemoData() {
   const store = await getStore();
-  const weddings = await store.getWeddings();
-  if (weddings.length > 0) return;
+  const existing = await store.getWeddingBySlug(DEMO_SLUG);
+  if (existing) return;
 
   const demo: Wedding = {
     id: "demo-wedding-001",
-    slug: "maja-in-luka",
+    slug: DEMO_SLUG,
     partner1: "Maja",
     partner2: "Luka",
     weddingDate: "2026-09-12",
