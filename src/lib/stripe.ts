@@ -5,14 +5,20 @@ export const PLANS = {
   basic: {
     name: "Osnovni paket",
     description: "Poročna stran z RSVP obrazcem in QR kodo",
-    amount: 100, // test: 1 € (produkcija: 4900)
+    amount: 3900, // 39 € (prej 49 €)
+    priceLabel: "39",
+    compareAtLabel: "49",
   },
   premium: {
     name: "Premium paket",
     description: "Vse iz osnovnega + galerija fotografij",
-    amount: 100, // test: 1 € (produkcija: 7900)
+    amount: 6900, // 69 € (prej 79 €)
+    priceLabel: "69",
+    compareAtLabel: "79",
   },
 } as const;
+
+export type PlanId = keyof typeof PLANS;
 
 export function isStripeEnabled(): boolean {
   return Boolean(process.env.STRIPE_SECRET_KEY);

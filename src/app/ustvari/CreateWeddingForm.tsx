@@ -9,10 +9,11 @@ import Input from "@/components/Input";
 import Textarea from "@/components/Textarea";
 import { ArrowLeft, ArrowRight, Check, Sparkles } from "lucide-react";
 import Link from "next/link";
+import { PLANS } from "@/lib/stripe";
 
 const menuOptions = [
-  { value: "basic", label: "Osnovni", price: "1 €", desc: "RSVP + QR koda (test)" },
-  { value: "premium", label: "Premium", price: "1 €", desc: "Vse + galerija fotografij (test)" },
+  { value: "basic" as const, label: "Osnovni", price: `${PLANS.basic.priceLabel} €`, desc: "RSVP + QR koda" },
+  { value: "premium" as const, label: "Premium", price: `${PLANS.premium.priceLabel} €`, desc: "Vse + galerija fotografij" },
 ];
 
 export default function CreateWeddingForm() {
@@ -262,7 +263,7 @@ export default function CreateWeddingForm() {
                   <Button onClick={handleSubmit} disabled={loading}>
                     {loading
                       ? "Preusmerjam..."
-                      : "Plačaj 1 € in ustvari"}
+                      : `Plačaj ${PLANS[form.plan].priceLabel} € in ustvari`}
                     <Sparkles className="w-4 h-4" />
                   </Button>
                 </div>

@@ -14,6 +14,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { getWeddingBySlug, seedDemoData } from "@/lib/db";
+import { PLANS } from "@/lib/stripe";
 
 const features = [
   {
@@ -45,7 +46,8 @@ const features = [
 const plans = [
   {
     name: "Osnovni",
-    price: "1",
+    price: PLANS.basic.priceLabel,
+    compareAt: PLANS.basic.compareAtLabel,
     features: [
       "Unikatna poročna stran",
       "RSVP obrazec",
@@ -57,7 +59,8 @@ const plans = [
   },
   {
     name: "Premium",
-    price: "1",
+    price: PLANS.premium.priceLabel,
+    compareAt: PLANS.premium.compareAtLabel,
     features: [
       "Vse iz osnovnega paketa",
       "Galerija fotografij",
@@ -122,7 +125,7 @@ export default async function HomePage() {
             </div>
 
             <p className="mt-6 text-sm text-warm-gray">
-              Pripravljeno v 15 minutah · Test: 1 € enkratno
+              Pripravljeno v 15 minutah · od {PLANS.basic.priceLabel} € enkratno
             </p>
           </div>
         </section>
@@ -209,6 +212,9 @@ export default async function HomePage() {
                   <div className="mb-6">
                     <span className={`font-serif text-5xl ${plan.highlighted ? "text-cream" : "text-charcoal"}`}>
                       {plan.price} €
+                    </span>
+                    <span className={`text-sm ml-2 line-through ${plan.highlighted ? "text-cream/40" : "text-warm-gray/60"}`}>
+                      {plan.compareAt} €
                     </span>
                     <span className={`text-sm ml-2 ${plan.highlighted ? "text-cream/60" : "text-warm-gray"}`}>
                       enkratno
