@@ -50,6 +50,21 @@ export default function CreateWeddingForm() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    if (searchParams.get("new") === "1") return;
+
+    fetch("/api/moje-poroke")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.weddings?.length === 1) {
+          router.replace(`/${data.weddings[0].slug}/upravljanje`);
+        } else if (data.weddings?.length > 1) {
+          router.replace("/moje-poroke");
+        }
+      })
+      .catch(() => {});
+  }, [router, searchParams]);
+
   const handleSubmit = async () => {
     setLoading(true);
     try {

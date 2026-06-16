@@ -1,8 +1,6 @@
+import { getAuthUserId } from "@/lib/auth";
+import { getStripe, metadataToWeddingInput } from "@/lib/stripe";
 import { createWedding } from "@/lib/db";
-import {
-  getStripe,
-  metadataToWeddingInput,
-} from "@/lib/stripe";
 import type Stripe from "stripe";
 
 export async function fulfillCheckoutSession(session: Stripe.Checkout.Session) {
@@ -15,9 +13,18 @@ export async function fulfillCheckoutSession(session: Stripe.Checkout.Session) {
     throw new Error("Manjkajo podatki poroke v Stripe metadata");
   }
 
+  let clerkUserId = session.metadata?.clerkUserId || undefined;
+
+  if (!clerkUserId) {
+    const authUserId = await getAuthUserId();
+    if (authUserId && authUserId !== "demo-user") {
+      clerkUserId = authUserId;
+    }
+  }
+
   return createWedding(input, {
     stripeSessionId: session.id,
-    clerkUserId: session.metadata?.clerkUserId || undefined,
+    clerkUserId,
   });
 }
 

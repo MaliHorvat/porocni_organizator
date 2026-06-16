@@ -11,9 +11,9 @@ interface Props {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  seedDemoData();
+  await seedDemoData();
   const { slug } = await params;
-  const wedding = getWeddingBySlug(slug);
+  const wedding = await getWeddingBySlug(slug);
   if (!wedding) return { title: "Stran ni najdena" };
   return {
     title: `${wedding.partner1} & ${wedding.partner2} — Poroka`,
@@ -22,9 +22,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function WeddingPage({ params }: Props) {
-  seedDemoData();
+  await seedDemoData();
   const { slug } = await params;
-  const wedding = getWeddingBySlug(slug);
+  const wedding = await getWeddingBySlug(slug);
 
   if (!wedding) notFound();
 

@@ -7,9 +7,9 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    seedDemoData();
+    await seedDemoData();
     const { slug } = await params;
-    const wedding = getWeddingBySlug(slug);
+    const wedding = await getWeddingBySlug(slug);
 
     if (!wedding) {
       return NextResponse.json({ error: "Poroka ni najdena" }, { status: 404 });
@@ -24,7 +24,7 @@ export async function POST(
       );
     }
 
-    const rsvp = createRSVP(wedding.id, {
+    const rsvp = await createRSVP(wedding.id, {
       name: body.name,
       email: body.email,
       attending: body.attending,

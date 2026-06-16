@@ -27,7 +27,7 @@ function SuccessContent() {
         const data = await res.json();
 
         if (res.ok && data.slug) {
-          router.replace(`/${data.slug}/upravljanje`);
+          router.replace(`/${data.slug}/upravljanje?new=1`);
           return;
         }
 

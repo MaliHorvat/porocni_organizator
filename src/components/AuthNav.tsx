@@ -4,11 +4,21 @@ import Link from "next/link";
 import { useAuth, UserButton } from "@clerk/nextjs";
 
 export default function AuthNav() {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isLoaded } = useAuth();
+
+  if (!isLoaded) {
+    return null;
+  }
 
   if (isSignedIn) {
     return (
       <>
+        <Link
+          href="/moje-poroke"
+          className="text-sm text-warm-gray hover:text-charcoal transition-colors hidden sm:block"
+        >
+          Moja poroka
+        </Link>
         <Link
           href="/ustvari"
           className="text-sm bg-sage text-white px-5 py-2 rounded-full hover:bg-sage-dark transition-colors"
@@ -29,7 +39,7 @@ export default function AuthNav() {
         Prijava
       </Link>
       <Link
-        href="/ustvari"
+        href="/registracija"
         className="text-sm bg-sage text-white px-5 py-2 rounded-full hover:bg-sage-dark transition-colors"
       >
         Ustvari stran

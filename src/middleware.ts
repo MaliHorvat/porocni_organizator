@@ -10,6 +10,7 @@ function isClerkEnabled(): boolean {
 
 const isProtectedRoute = createRouteMatcher([
   "/ustvari(.*)",
+  "/moje-poroke(.*)",
   "/(.*)/upravljanje(.*)",
 ]);
 

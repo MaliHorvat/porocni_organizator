@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile } from "fs/promises";
-import path from "path";
 import { v4 as uuidv4 } from "uuid";
+import path from "path";
 import {
   getWeddingBySlug,
   createPhoto,
-  getUploadsDir,
+  savePhotoFile,
   seedDemoData,
 } from "@/lib/db";
 
@@ -14,9 +13,9 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    seedDemoData();
+    await seedDemoData();
     const { slug } = await params;
-    const wedding = getWeddingBySlug(slug);
+    const wedding = await getWeddingBySlug(slug);
 
     if (!wedding) {
       return NextResponse.json({ error: "Poroka ni najdena" }, { status: 404 });
@@ -40,12 +39,19 @@ export async function POST(
 
     const ext = path.extname(file.name) || ".jpg";
     const filename = `${uuidv4()}${ext}`;
-    const uploadDir = getUploadsDir(wedding.id);
     const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(path.join(uploadDir, filename), buffer);
+    const storedName = await savePhotoFile(wedding.id, filename, buffer);
 
-    const photo = createPhoto(wedding.id, filename, uploaderName, caption);
-    return NextResponse.json({ photo: { id: photo.id, uploaderName: photo.uploaderName } });
+    const photo = await createPhoto(
+      wedding.id,
+      storedName,
+      uploaderName,
+      caption
+    );
+
+    return NextResponse.json({
+      photo: { id: photo.id, uploaderName: photo.uploaderName },
+    });
   } catch {
     return NextResponse.json(
       { error: "Napaka pri nalaganju fotografije" },

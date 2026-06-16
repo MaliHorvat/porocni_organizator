@@ -42,7 +42,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (!isStripeEnabled()) {
-      const wedding = createWedding(body, { clerkUserId: clerkUserId || undefined });
+      const wedding = await createWedding(body, {
+        clerkUserId: clerkUserId || undefined,
+      });
       return NextResponse.json({ slug: wedding.slug, id: wedding.id, demo: true });
     }
 

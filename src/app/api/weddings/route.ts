@@ -5,7 +5,7 @@ import type { CreateWeddingInput } from "@/types";
 
 export async function POST(request: NextRequest) {
   try {
-    seedDemoData();
+    await seedDemoData();
     const body: CreateWeddingInput = await request.json();
 
     if (!body.partner1 || !body.partner2 || !body.weddingDate || !body.venue) {
@@ -20,7 +20,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Potrebna je prijava" }, { status: 401 });
     }
 
-    const wedding = createWedding(body, { clerkUserId: clerkUserId || undefined });
+    const wedding = await createWedding(body, {
+      clerkUserId: clerkUserId || undefined,
+    });
     return NextResponse.json({ slug: wedding.slug, id: wedding.id });
   } catch {
     return NextResponse.json(

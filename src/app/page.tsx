@@ -2,6 +2,7 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Button from "@/components/Button";
+import CreatePageLink from "@/components/CreatePageLink";
 import {
   Heart,
   QrCode,
@@ -12,9 +13,7 @@ import {
   Check,
   ArrowRight,
 } from "lucide-react";
-import { seedDemoData } from "@/lib/db";
-
-seedDemoData();
+import { getWeddingBySlug, seedDemoData } from "@/lib/db";
 
 const features = [
   {
@@ -76,7 +75,9 @@ const steps = [
   { num: "03", title: "Delite z gosti", desc: "Natisnite QR kodo na vabila in pošljite povezavo." },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  await seedDemoData();
+
   return (
     <>
       <Header />
@@ -107,12 +108,12 @@ export default function HomePage() {
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/ustvari">
+              <CreatePageLink>
                 <Button size="lg">
                   Ustvari svojo stran
                   <ArrowRight className="w-5 h-5" />
                 </Button>
-              </Link>
+              </CreatePageLink>
               <Link href="/maja-in-luka">
                 <Button variant="outline" size="lg">
                   Oglej si demo
@@ -221,14 +222,14 @@ export default function HomePage() {
                       </li>
                     ))}
                   </ul>
-                  <Link href={`/ustvari?plan=${plan.highlighted ? "premium" : "basic"}`}>
+                  <CreatePageLink plan={plan.highlighted ? "premium" : "basic"}>
                     <Button
                       variant={plan.highlighted ? "secondary" : "primary"}
                       className="w-full"
                     >
                       Izberi {plan.name}
                     </Button>
-                  </Link>
+                  </CreatePageLink>
                 </div>
               ))}
             </div>
@@ -248,12 +249,12 @@ export default function HomePage() {
             <p className="text-warm-gray text-lg mb-10">
               Ustvarite svojo poročno stran še danes in se osredotočite na to, kar je res pomembno.
             </p>
-            <Link href="/ustvari">
+            <CreatePageLink>
               <Button size="lg">
                 Začni zdaj — 15 minut
                 <ArrowRight className="w-5 h-5" />
               </Button>
-            </Link>
+            </CreatePageLink>
           </div>
         </section>
       </main>

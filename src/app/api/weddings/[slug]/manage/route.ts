@@ -5,15 +5,15 @@ import {
   getPhotos,
   seedDemoData,
 } from "@/lib/db";
-import { requireWeddingAccess } from "@/lib/auth";
+import { requireWeddingAccess, getAuthUserId } from "@/lib/auth";
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  seedDemoData();
+  await seedDemoData();
   const { slug } = await params;
-  const wedding = getWeddingBySlug(slug);
+  const wedding = await getWeddingBySlug(slug);
 
   if (!wedding) {
     return NextResponse.json({ error: "Poroka ni najdena" }, { status: 404 });
@@ -24,8 +24,8 @@ export async function GET(
     return NextResponse.json({ error: "Nimate dostopa" }, { status: 403 });
   }
 
-  const rsvps = getRSVPs(wedding.id);
-  const photos = getPhotos(wedding.id);
+  const rsvps = await getRSVPs(wedding.id);
+  const photos = await getPhotos(wedding.id);
 
   return NextResponse.json({ wedding, rsvps, photos });
 }

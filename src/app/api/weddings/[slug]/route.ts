@@ -5,9 +5,9 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  seedDemoData();
+  await seedDemoData();
   const { slug } = await params;
-  const wedding = getWeddingBySlug(slug);
+  const wedding = await getWeddingBySlug(slug);
 
   if (!wedding) {
     return NextResponse.json({ error: "Poroka ni najdena" }, { status: 404 });

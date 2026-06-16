@@ -1,50 +1,14 @@
+import { put } from "@vercel/blob";
 import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
+import { getStore } from "@/lib/store";
+import { getStoreBackend } from "@/lib/store-types";
+import { linkWeddingToUser } from "@/lib/clerk-sync";
 import type { Wedding, RSVP, Photo, CreateWeddingInput } from "@/types";
 
-const DATA_DIR =
-  process.env.VERCEL === "1"
-    ? path.join("/tmp", "porocna-stran-data")
-    : path.join(process.cwd(), "data");
-const UPLOADS_DIR = path.join(DATA_DIR, "uploads");
-
-const WEDDINGS_FILE = path.join(DATA_DIR, "weddings.json");
-const RSVPS_FILE = path.join(DATA_DIR, "rsvps.json");
-const PHOTOS_FILE = path.join(DATA_DIR, "photos.json");
-
-function ensureDirs() {
-  try {
-    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-    if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-  } catch (error) {
-    console.error("Napaka pri ustvarjanju map:", error);
-  }
-}
-
-function readJson<T>(file: string, fallback: T): T {
-  ensureDirs();
-  try {
-    if (!fs.existsSync(file)) {
-      fs.writeFileSync(file, JSON.stringify(fallback, null, 2));
-      return fallback;
-    }
-    return JSON.parse(fs.readFileSync(file, "utf-8")) as T;
-  } catch (error) {
-    console.error(`Napaka pri branju ${file}:`, error);
-    return fallback;
-  }
-}
-
-function writeJson<T>(file: string, data: T) {
-  ensureDirs();
-  try {
-    fs.writeFileSync(file, JSON.stringify(data, null, 2));
-  } catch (error) {
-    console.error(`Napaka pri pisanju ${file}:`, error);
-    throw error;
-  }
-}
+const LOCAL_UPLOADS = path.join(process.cwd(), "data", "uploads");
+const TMP_UPLOADS = path.join("/tmp", "porocna-stran-uploads");
 
 function slugify(text: string): string {
   const map: Record<string, string> = {
@@ -58,9 +22,13 @@ function slugify(text: string): string {
     .replace(/^-|-$/g, "");
 }
 
-export function createSlug(partner1: string, partner2: string): string {
+export async function createSlug(
+  partner1: string,
+  partner2: string
+): Promise<string> {
+  const store = await getStore();
+  const weddings = await store.getWeddings();
   const base = `${slugify(partner1)}-in-${slugify(partner2)}`;
-  const weddings = getWeddings();
   let slug = base;
   let counter = 1;
   while (weddings.some((w) => w.slug === slug)) {
@@ -69,86 +37,85 @@ export function createSlug(partner1: string, partner2: string): string {
   return slug;
 }
 
-export function getWeddings(): Wedding[] {
-  return readJson<Wedding[]>(WEDDINGS_FILE, []);
+export async function getWeddingBySlug(slug: string) {
+  const store = await getStore();
+  return store.getWeddingBySlug(slug);
 }
 
-export function getWeddingBySlug(slug: string): Wedding | undefined {
-  return getWeddings().find((w) => w.slug === slug);
+export async function getWeddingByStripeSession(sessionId: string) {
+  const store = await getStore();
+  return store.getWeddingByStripeSession(sessionId);
 }
 
-export function getWeddingById(id: string): Wedding | undefined {
-  return getWeddings().find((w) => w.id === id);
+export async function getWeddingsByClerkUserId(clerkUserId: string) {
+  const store = await getStore();
+  return store.getWeddingsByClerkUserId(clerkUserId);
 }
 
-export function getWeddingByStripeSession(
-  sessionId: string
-): Wedding | undefined {
-  return getWeddings().find((w) => w.stripeSessionId === sessionId);
-}
-
-export function createWedding(
+export async function createWedding(
   input: CreateWeddingInput,
   options?: { stripeSessionId?: string; clerkUserId?: string }
-): Wedding {
-  const stripeSessionId = options?.stripeSessionId;
-  const clerkUserId = options?.clerkUserId;
+) {
+  const store = await getStore();
 
-  if (stripeSessionId) {
-    const existing = getWeddingByStripeSession(stripeSessionId);
+  if (options?.stripeSessionId) {
+    const existing = await store.getWeddingByStripeSession(options.stripeSessionId);
     if (existing) return existing;
   }
 
-  const weddings = getWeddings();
   const wedding: Wedding = {
     id: uuidv4(),
-    slug: createSlug(input.partner1, input.partner2),
+    slug: await createSlug(input.partner1, input.partner2),
     ...input,
     galleryEnabled: input.plan === "premium",
     createdAt: new Date().toISOString(),
-    ...(clerkUserId ? { clerkUserId } : {}),
-    ...(stripeSessionId
-      ? { stripeSessionId, paymentStatus: "paid" as const }
+    ...(options?.clerkUserId ? { clerkUserId: options.clerkUserId } : {}),
+    ...(options?.stripeSessionId
+      ? { stripeSessionId: options.stripeSessionId, paymentStatus: "paid" as const }
       : {}),
   };
-  weddings.push(wedding);
-  writeJson(WEDDINGS_FILE, weddings);
+
+  await store.createWedding(wedding);
+
+  if (options?.clerkUserId) {
+    await linkWeddingToUser(options.clerkUserId, wedding.slug, wedding.id);
+  }
+
   return wedding;
 }
 
-export function getRSVPs(weddingId?: string): RSVP[] {
-  const rsvps = readJson<RSVP[]>(RSVPS_FILE, []);
-  return weddingId ? rsvps.filter((r) => r.weddingId === weddingId) : rsvps;
+export async function getRSVPs(weddingId?: string) {
+  const store = await getStore();
+  return store.getRSVPs(weddingId);
 }
 
-export function createRSVP(
+export async function createRSVP(
   weddingId: string,
   data: Omit<RSVP, "id" | "weddingId" | "createdAt">
-): RSVP {
-  const rsvps = getRSVPs();
+) {
+  const store = await getStore();
   const rsvp: RSVP = {
     id: uuidv4(),
     weddingId,
     ...data,
     createdAt: new Date().toISOString(),
   };
-  rsvps.push(rsvp);
-  writeJson(RSVPS_FILE, rsvps);
+  await store.createRSVP(rsvp);
   return rsvp;
 }
 
-export function getPhotos(weddingId?: string): Photo[] {
-  const photos = readJson<Photo[]>(PHOTOS_FILE, []);
-  return weddingId ? photos.filter((p) => p.weddingId === weddingId) : photos;
+export async function getPhotos(weddingId?: string) {
+  const store = await getStore();
+  return store.getPhotos(weddingId);
 }
 
-export function createPhoto(
+export async function createPhoto(
   weddingId: string,
   filename: string,
   uploaderName: string,
   caption: string
-): Photo {
-  const photos = getPhotos();
+) {
+  const store = await getStore();
   const photo: Photo = {
     id: uuidv4(),
     weddingId,
@@ -157,19 +124,68 @@ export function createPhoto(
     caption,
     createdAt: new Date().toISOString(),
   };
-  photos.push(photo);
-  writeJson(PHOTOS_FILE, photos);
+  await store.createPhoto(photo);
   return photo;
 }
 
+export async function savePhotoFile(
+  weddingId: string,
+  filename: string,
+  buffer: Buffer
+): Promise<string> {
+  if (getStoreBackend() === "blob") {
+    const key = `poroka/photos/${weddingId}/${filename}`;
+    await put(key, buffer, {
+      access: "private",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+    });
+    return key;
+  }
+
+  const dir = getUploadsDir(weddingId);
+  const filePath = path.join(dir, filename);
+  fs.writeFileSync(filePath, buffer);
+  return filename;
+}
+
+export async function getPhotoFile(
+  weddingId: string,
+  filename: string
+): Promise<Buffer | null> {
+  if (filename.startsWith("poroka/photos/")) {
+    try {
+      const { head } = await import("@vercel/blob");
+      const meta = await head(filename);
+      const res = await fetch(meta.url);
+      if (!res.ok) return null;
+      return Buffer.from(await res.arrayBuffer());
+    } catch {
+      return null;
+    }
+  }
+
+  try {
+    const filePath = path.join(getUploadsDir(weddingId), filename);
+    return fs.readFileSync(filePath);
+  } catch {
+    return null;
+  }
+}
+
 export function getUploadsDir(weddingId: string): string {
-  const dir = path.join(UPLOADS_DIR, weddingId);
+  const base =
+    process.env.VERCEL === "1" && getStoreBackend() !== "blob"
+      ? TMP_UPLOADS
+      : LOCAL_UPLOADS;
+  const dir = path.join(base, weddingId);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   return dir;
 }
 
-export function seedDemoData() {
-  const weddings = getWeddings();
+export async function seedDemoData() {
+  const store = await getStore();
+  const weddings = await store.getWeddings();
   if (weddings.length > 0) return;
 
   const demo: Wedding = {
@@ -182,7 +198,7 @@ export function seedDemoData() {
     venue: "Grad Otočec",
     venueAddress: "Otočec 39, 8222 Otočec",
     description:
-      "Z velikim veseljem vas vabimo, da z nami proslavite naš najlepši dan. Po ceremoniji sledi slavnostna večerja in ples do jutranjih ur.",
+      "Z velikim veseljem vas vabimo, da z nami proslavite naš najlepši dan.",
     dressCode: "Elegantna priložnostna oblačila",
     rsvpDeadline: "2026-08-01",
     galleryEnabled: true,
@@ -190,5 +206,5 @@ export function seedDemoData() {
     plan: "premium",
   };
 
-  writeJson(WEDDINGS_FILE, [demo]);
+  await store.createWedding(demo);
 }
