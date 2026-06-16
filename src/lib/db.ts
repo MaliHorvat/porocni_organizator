@@ -1,4 +1,3 @@
-import { put } from "@vercel/blob";
 import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
@@ -8,7 +7,6 @@ import { linkWeddingToUser } from "@/lib/clerk-sync";
 import type { Wedding, RSVP, Photo, CreateWeddingInput } from "@/types";
 
 const LOCAL_UPLOADS = path.join(process.cwd(), "data", "uploads");
-const TMP_UPLOADS = path.join("/tmp", "porocna-stran-uploads");
 
 function slugify(text: string): string {
   const map: Record<string, string> = {
@@ -109,9 +107,10 @@ export async function getPhotos(weddingId?: string) {
   return store.getPhotos(weddingId);
 }
 
-export async function createPhoto(
+export async function uploadPhoto(
   weddingId: string,
   filename: string,
+  buffer: Buffer,
   uploaderName: string,
   caption: string
 ) {
@@ -124,66 +123,24 @@ export async function createPhoto(
     caption,
     createdAt: new Date().toISOString(),
   };
-  await store.createPhoto(photo);
+  await store.createPhoto(photo, buffer);
   return photo;
 }
 
-export async function savePhotoFile(
-  weddingId: string,
-  filename: string,
-  buffer: Buffer
-): Promise<string> {
-  if (getStoreBackend() === "blob") {
-    const key = `poroka/photos/${weddingId}/${filename}`;
-    await put(key, buffer, {
-      access: "private",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-    });
-    return key;
-  }
-
-  const dir = getUploadsDir(weddingId);
-  const filePath = path.join(dir, filename);
-  fs.writeFileSync(filePath, buffer);
-  return filename;
-}
-
-export async function getPhotoFile(
-  weddingId: string,
-  filename: string
-): Promise<Buffer | null> {
-  if (filename.startsWith("poroka/photos/")) {
-    try {
-      const { head } = await import("@vercel/blob");
-      const meta = await head(filename);
-      const res = await fetch(meta.url);
-      if (!res.ok) return null;
-      return Buffer.from(await res.arrayBuffer());
-    } catch {
-      return null;
-    }
-  }
-
-  try {
-    const filePath = path.join(getUploadsDir(weddingId), filename);
-    return fs.readFileSync(filePath);
-  } catch {
-    return null;
-  }
+export async function getPhotoFile(photoId: string): Promise<Buffer | null> {
+  const store = await getStore();
+  return store.getPhotoData(photoId);
 }
 
 export function getUploadsDir(weddingId: string): string {
-  const base =
-    process.env.VERCEL === "1" && getStoreBackend() !== "blob"
-      ? TMP_UPLOADS
-      : LOCAL_UPLOADS;
-  const dir = path.join(base, weddingId);
+  const dir = path.join(LOCAL_UPLOADS, weddingId);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   return dir;
 }
 
 export async function seedDemoData() {
+  if (getStoreBackend() === "mysql") return;
+
   const store = await getStore();
   const weddings = await store.getWeddings();
   if (weddings.length > 0) return;

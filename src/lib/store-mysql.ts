@@ -1,4 +1,5 @@
 import mysql from "mysql2/promise";
+import { getDatabaseUrl } from "./store-types";
 import type { WeddingStore } from "./store-types";
 import type { Wedding, RSVP, Photo } from "@/types";
 
@@ -6,9 +7,16 @@ let pool: mysql.Pool | null = null;
 
 function getPool() {
   if (!pool) {
-    pool = mysql.createPool(process.env.DATABASE_URL!);
+    const url = getDatabaseUrl();
+    if (!url) throw new Error("MySQL povezava ni konfigurirana");
+    pool = mysql.createPool(url);
   }
   return pool;
+}
+
+function formatDate(val: unknown): string {
+  if (val instanceof Date) return val.toISOString().split("T")[0];
+  return String(val).split("T")[0];
 }
 
 function rowToWedding(row: Record<string, unknown>): Wedding {
@@ -17,15 +25,17 @@ function rowToWedding(row: Record<string, unknown>): Wedding {
     slug: row.slug as string,
     partner1: row.partner1 as string,
     partner2: row.partner2 as string,
-    weddingDate: row.wedding_date as string,
+    weddingDate: formatDate(row.wedding_date),
     weddingTime: row.wedding_time as string,
     venue: row.venue as string,
     venueAddress: row.venue_address as string,
     description: (row.description as string) || "",
     dressCode: (row.dress_code as string) || undefined,
-    rsvpDeadline: row.rsvp_deadline as string,
+    rsvpDeadline: formatDate(row.rsvp_deadline),
     galleryEnabled: Boolean(row.gallery_enabled),
-    createdAt: row.created_at as string,
+    createdAt: row.created_at instanceof Date
+      ? row.created_at.toISOString()
+      : String(row.created_at),
     plan: row.plan as "basic" | "premium",
     clerkUserId: (row.clerk_user_id as string) || undefined,
     stripeSessionId: (row.stripe_session_id as string) || undefined,
@@ -68,7 +78,7 @@ export async function initMysqlSchema() {
       allergies TEXT,
       message TEXT,
       created_at DATETIME NOT NULL,
-      FOREIGN KEY (wedding_id) REFERENCES weddings(id)
+      INDEX idx_rsvps_wedding (wedding_id)
     )
   `);
   await db.execute(`
@@ -78,8 +88,9 @@ export async function initMysqlSchema() {
       filename VARCHAR(255) NOT NULL,
       uploader_name VARCHAR(255) NOT NULL,
       caption TEXT,
+      file_data LONGBLOB,
       created_at DATETIME NOT NULL,
-      FOREIGN KEY (wedding_id) REFERENCES weddings(id)
+      INDEX idx_photos_wedding (wedding_id)
     )
   `);
 }
@@ -166,7 +177,9 @@ export function createMysqlStore(): WeddingStore {
         menuChoice: row.menu_choice as RSVP["menuChoice"],
         allergies: (row.allergies as string) || "",
         message: (row.message as string) || "",
-        createdAt: row.created_at as string,
+        createdAt: row.created_at instanceof Date
+          ? row.created_at.toISOString()
+          : String(row.created_at),
       }));
     },
     async createRSVP(rsvp) {
@@ -194,31 +207,48 @@ export function createMysqlStore(): WeddingStore {
     },
     async getPhotos(weddingId) {
       const [rows] = weddingId
-        ? await getPool().execute("SELECT * FROM photos WHERE wedding_id = ?", [weddingId])
-        : await getPool().execute("SELECT * FROM photos");
+        ? await getPool().execute(
+            "SELECT id, wedding_id, filename, uploader_name, caption, created_at FROM photos WHERE wedding_id = ?",
+            [weddingId]
+          )
+        : await getPool().execute(
+            "SELECT id, wedding_id, filename, uploader_name, caption, created_at FROM photos"
+          );
       return (rows as Record<string, unknown>[]).map((row) => ({
         id: row.id as string,
         weddingId: row.wedding_id as string,
         filename: row.filename as string,
         uploaderName: row.uploader_name as string,
         caption: (row.caption as string) || "",
-        createdAt: row.created_at as string,
+        createdAt: row.created_at instanceof Date
+          ? row.created_at.toISOString()
+          : String(row.created_at),
       }));
     },
-    async createPhoto(photo) {
+    async createPhoto(photo, fileData) {
       await getPool().execute(
-        `INSERT INTO photos (id, wedding_id, filename, uploader_name, caption, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO photos (id, wedding_id, filename, uploader_name, caption, file_data, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
           photo.id,
           photo.weddingId,
           photo.filename,
           photo.uploaderName,
           photo.caption,
+          fileData || null,
           photo.createdAt,
         ]
       );
       return photo;
+    },
+    async getPhotoData(photoId) {
+      const [rows] = await getPool().execute(
+        "SELECT file_data FROM photos WHERE id = ? LIMIT 1",
+        [photoId]
+      );
+      const row = (rows as Record<string, unknown>[])[0];
+      if (!row?.file_data) return null;
+      return Buffer.from(row.file_data as Buffer);
     },
     async savePhotos() {
       throw new Error("savePhotos not supported for MySQL");

@@ -73,11 +73,29 @@ export function createJsonStore(): WeddingStore {
       const photos = readJson<Photo[]>(PHOTOS_FILE, []);
       return weddingId ? photos.filter((p) => p.weddingId === weddingId) : photos;
     },
-    async createPhoto(photo) {
+    async createPhoto(photo, fileData?) {
       const photos = readJson<Photo[]>(PHOTOS_FILE, []);
       photos.push(photo);
       writeJson(PHOTOS_FILE, photos);
+
+      if (fileData) {
+        const dir = path.join(DATA_DIR, "uploads", photo.weddingId);
+        if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(path.join(dir, photo.filename), fileData);
+      }
+
       return photo;
+    },
+    async getPhotoData(photoId) {
+      const photos = readJson<Photo[]>(PHOTOS_FILE, []);
+      const photo = photos.find((p) => p.id === photoId);
+      if (!photo) return null;
+      try {
+        const filePath = path.join(DATA_DIR, "uploads", photo.weddingId, photo.filename);
+        return fs.readFileSync(filePath);
+      } catch {
+        return null;
+      }
     },
     async savePhotos(photos) {
       writeJson(PHOTOS_FILE, photos);

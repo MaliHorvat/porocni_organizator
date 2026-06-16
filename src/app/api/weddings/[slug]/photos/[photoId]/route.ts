@@ -33,7 +33,7 @@ export async function GET(
     return NextResponse.json({ error: "Fotografija ni najdena" }, { status: 404 });
   }
 
-  const buffer = await getPhotoFile(wedding.id, photo.filename);
+  const buffer = await getPhotoFile(photoId);
   if (!buffer) {
     return NextResponse.json(
       { error: "Fotografija ni na voljo" },
@@ -41,9 +41,7 @@ export async function GET(
     );
   }
 
-  const ext = path.extname(
-    photo.filename.startsWith("poroka/") ? ".jpg" : photo.filename
-  ).toLowerCase();
+  const ext = path.extname(photo.filename).toLowerCase();
   const contentType = MIME_TYPES[ext] || "application/octet-stream";
 
   return new NextResponse(new Uint8Array(buffer), {

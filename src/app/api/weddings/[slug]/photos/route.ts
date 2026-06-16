@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { v4 as uuidv4 } from "uuid";
 import path from "path";
-import {
-  getWeddingBySlug,
-  createPhoto,
-  savePhotoFile,
-  seedDemoData,
-} from "@/lib/db";
+import { v4 as uuidv4 } from "uuid";
+import { getWeddingBySlug, uploadPhoto, seedDemoData } from "@/lib/db";
 
 export async function POST(
   request: NextRequest,
@@ -40,11 +35,11 @@ export async function POST(
     const ext = path.extname(file.name) || ".jpg";
     const filename = `${uuidv4()}${ext}`;
     const buffer = Buffer.from(await file.arrayBuffer());
-    const storedName = await savePhotoFile(wedding.id, filename, buffer);
 
-    const photo = await createPhoto(
+    const photo = await uploadPhoto(
       wedding.id,
-      storedName,
+      filename,
+      buffer,
       uploaderName,
       caption
     );

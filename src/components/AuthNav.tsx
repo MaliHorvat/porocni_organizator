@@ -39,7 +39,7 @@ export default function AuthNav() {
         Prijava
       </Link>
       <Link
-        href="/registracija"
+        href="/prijava?redirect_url=%2Fustvari"
         className="text-sm bg-sage text-white px-5 py-2 rounded-full hover:bg-sage-dark transition-colors"
       >
         Ustvari stran

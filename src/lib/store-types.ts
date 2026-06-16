@@ -6,9 +6,7 @@ export interface WeddingStore {
   getWeddingById(id: string): Promise<Wedding | undefined>;
   getWeddingByStripeSession(sessionId: string): Promise<Wedding | undefined>;
   getWeddingsByClerkUserId(clerkUserId: string): Promise<Wedding[]>;
-  createWedding(
-    wedding: Wedding
-  ): Promise<Wedding>;
+  createWedding(wedding: Wedding): Promise<Wedding>;
   saveWeddings(weddings: Wedding[]): Promise<void>;
 
   getRSVPs(weddingId?: string): Promise<RSVP[]>;
@@ -16,14 +14,36 @@ export interface WeddingStore {
   saveRSVPs(rsvps: RSVP[]): Promise<void>;
 
   getPhotos(weddingId?: string): Promise<Photo[]>;
-  createPhoto(photo: Photo): Promise<Photo>;
+  createPhoto(photo: Photo, fileData?: Buffer): Promise<Photo>;
+  getPhotoData(photoId: string): Promise<Buffer | null>;
   savePhotos(photos: Photo[]): Promise<void>;
 }
 
-export type StoreBackend = "mysql" | "blob" | "json";
+export type StoreBackend = "mysql" | "json";
+
+export function getDatabaseUrl(): string | undefined {
+  if (process.env.DATABASE_URL) {
+    return process.env.DATABASE_URL;
+  }
+
+  const host = process.env.DATABASE_HOST;
+  const user = process.env.DATABASE_USER;
+  const password = process.env.DATABASE_PASSWORD;
+  const name = process.env.DATABASE_NAME;
+
+  if (host && user && password && name) {
+    const port = process.env.DATABASE_PORT || "3306";
+    return `mysql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${name}`;
+  }
+
+  return undefined;
+}
 
 export function getStoreBackend(): StoreBackend {
-  if (process.env.DATABASE_URL) return "mysql";
-  if (process.env.BLOB_READ_WRITE_TOKEN) return "blob";
+  if (getDatabaseUrl()) return "mysql";
   return "json";
+}
+
+export function isProductionWithoutDatabase(): boolean {
+  return process.env.VERCEL === "1" && !getDatabaseUrl();
 }

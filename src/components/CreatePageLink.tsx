@@ -19,9 +19,9 @@ function CreatePageLinkAuthed({
   const { isSignedIn, isLoaded } = useAuth();
 
   const ustvariHref = plan ? `/ustvari?plan=${plan}` : "/ustvari";
-  const authHref = plan
-    ? `/registracija?redirect_url=${encodeURIComponent(ustvariHref)}`
-    : "/registracija";
+  const prijavaHref = plan
+    ? `/prijava?redirect_url=${encodeURIComponent(ustvariHref)}`
+    : "/prijava?redirect_url=%2Fustvari";
 
   if (!isLoaded) {
     return (
@@ -31,7 +31,7 @@ function CreatePageLinkAuthed({
     );
   }
 
-  const href = isSignedIn ? ustvariHref : authHref;
+  const href = isSignedIn ? ustvariHref : prijavaHref;
 
   return (
     <Link href={href} className={className}>
