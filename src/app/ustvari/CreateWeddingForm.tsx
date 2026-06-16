@@ -11,8 +11,8 @@ import { ArrowLeft, ArrowRight, Check, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 const menuOptions = [
-  { value: "basic", label: "Osnovni", price: "49 €", desc: "RSVP + QR koda" },
-  { value: "premium", label: "Premium", price: "79 €", desc: "Vse + galerija fotografij" },
+  { value: "basic", label: "Osnovni", price: "1 €", desc: "RSVP + QR koda (test)" },
+  { value: "premium", label: "Premium", price: "1 €", desc: "Vse + galerija fotografij (test)" },
 ];
 
 export default function CreateWeddingForm() {
@@ -247,7 +247,7 @@ export default function CreateWeddingForm() {
                   <Button onClick={handleSubmit} disabled={loading}>
                     {loading
                       ? "Preusmerjam..."
-                      : `Plačaj ${form.plan === "premium" ? "79 €" : "49 €"} in ustvari`}
+                      : "Plačaj 1 € in ustvari"}
                     <Sparkles className="w-4 h-4" />
                   </Button>
                 </div>

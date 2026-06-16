@@ -46,7 +46,7 @@ const features = [
 const plans = [
   {
     name: "Osnovni",
-    price: "49",
+    price: "1",
     features: [
       "Unikatna poročna stran",
       "RSVP obrazec",
@@ -58,7 +58,7 @@ const plans = [
   },
   {
     name: "Premium",
-    price: "79",
+    price: "1",
     features: [
       "Vse iz osnovnega paketa",
       "Galerija fotografij",
@@ -121,7 +121,7 @@ export default function HomePage() {
             </div>
 
             <p className="mt-6 text-sm text-warm-gray">
-              Pripravljeno v 15 minutah · Od 49 € enkratno
+              Pripravljeno v 15 minutah · Test: 1 € enkratno
             </p>
           </div>
         </section>

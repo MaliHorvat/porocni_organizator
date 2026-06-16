@@ -5,12 +5,12 @@ export const PLANS = {
   basic: {
     name: "Osnovni paket",
     description: "Poročna stran z RSVP obrazcem in QR kodo",
-    amount: 4900,
+    amount: 100, // test: 1 € (produkcija: 4900)
   },
   premium: {
     name: "Premium paket",
     description: "Vse iz osnovnega + galerija fotografij",
-    amount: 7900,
+    amount: 100, // test: 1 € (produkcija: 7900)
   },
 } as const;
 
